@@ -55,6 +55,9 @@ function processData(data) {
 
 const server = http.createServer((req, res) => {
     res.setHeader('Content-Type', 'application/json');
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
     if (req.url === '/bfhl' && req.method === 'POST') {
         let body = '';
