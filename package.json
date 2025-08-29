@@ -1,0 +1,11 @@
+{
+  "name": "bfhl-api",
+  "version": "1.0.0",
+  "description": "A REST API for the VIT Full Stack challenge.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "ISC"
+}
