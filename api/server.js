@@ -1,5 +1,13 @@
-const http = require('http');
+// This is the updated code for your api/server.js file
 
+// The http module is no longer needed for Vercel Serverless Functions
+// const http = require('http');
+
+/**
+ * Processes the incoming data array to categorize its contents.
+ * @param {Array<string|number>} data - The input array from the request body.
+ * @returns {object} The processed data object.
+ */
 function processData(data) {
     const odd_numbers = [];
     const even_numbers = [];
@@ -8,9 +16,11 @@ function processData(data) {
     let sum = 0;
     let alphabeticalChars = '';
 
+    // Regular expression to test if a string contains only alphabetic characters.
     const isAlphabet = /^[a-zA-Z]+$/;
 
     data.forEach(item => {
+        // Check if the item is a finite number
         if (!isNaN(parseFloat(item)) && isFinite(item)) {
             const num = Number(item);
             sum += num;
@@ -19,16 +29,20 @@ function processData(data) {
             } else {
                 odd_numbers.push(String(num));
             }
+        // Check if the item is a string and purely alphabetical
         } else if (typeof item === 'string' && isAlphabet.test(item)) {
             alphabets.push(item.toUpperCase());
             alphabeticalChars += item;
+        // Otherwise, it's a special character
         } else {
             special_characters.push(item);
         }
     });
     
+    // Reverse the collected alphabetical characters
     let reversedAlphabets = alphabeticalChars.split('').reverse().join('');
     let concat_string = '';
+    // Apply alternating case to the reversed string
     for (let i = 0; i < reversedAlphabets.length; i++) {
         if (i % 2 === 0) {
             concat_string += reversedAlphabets[i].toUpperCase();
@@ -37,6 +51,7 @@ function processData(data) {
         }
     }
 
+    // Construct the final response object
     const response = {
         is_success: true,
         user_id: "nitya_raval_20092004",
@@ -53,12 +68,27 @@ function processData(data) {
     return response;
 }
 
-const server = http.createServer((req, res) => {
+
+/**
+ * The main handler for Vercel Serverless Functions.
+ * This function replaces the http.createServer and server.listen logic.
+ * @param {object} req - The incoming request object.
+ * @param {object} res - The outgoing response object.
+ */
+// Use module.exports for compatibility with Vercel's Node.js runtime
+module.exports = (req, res) => {
+    // Set common headers for CORS and content type
     res.setHeader('Content-Type', 'application/json');
     res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS"); // Only POST is implemented
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
+    // Handle pre-flight OPTIONS request for CORS
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
+    // Route handling for the /bfhl endpoint
     if (req.url === '/bfhl' && req.method === 'POST') {
         let body = '';
 
@@ -68,6 +98,10 @@ const server = http.createServer((req, res) => {
 
         req.on('end', () => {
             try {
+                // Ensure body is not empty before parsing
+                if (!body) {
+                    throw new Error("Request body is empty.");
+                }
                 const parsedBody = JSON.parse(body);
                 if (!parsedBody.data || !Array.isArray(parsedBody.data)) {
                     throw new Error("Invalid request format: 'data' key must be an array.");
@@ -75,31 +109,22 @@ const server = http.createServer((req, res) => {
 
                 const result = processData(parsedBody.data);
 
-                res.writeHead(200);
-                res.end(JSON.stringify(result));
+                // Send a 200 OK response with the processed data
+                res.status(200).json(result);
 
             } catch (error) {
-                res.writeHead(400);
-                res.end(JSON.stringify({
+                // Send a 400 Bad Request response if an error occurs
+                res.status(400).json({
                     is_success: false,
                     error: `Bad Request: ${error.message}`
-                }));
+                });
             }
         });
     } else if (req.url === '/bfhl' && req.method !== 'POST') {
-        res.writeHead(405);
-        res.end(JSON.stringify({ is_success: false, error: 'Method Not Allowed' }));
+        // Handle incorrect method for the endpoint
+        res.status(405).json({ is_success: false, error: 'Method Not Allowed' });
     } else {
-        res.writeHead(404);
-        res.end(JSON.stringify({ is_success: false, error: 'Not Found' }));
+        // Handle all other routes with a 404 Not Found
+        res.status(404).json({ is_success: false, error: 'Not Found' });
     }
-});
-
-const PORT = process.env.PORT || 3000;
-
-server.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-    console.log(`API endpoint is available at http://localhost:${PORT}/bfhl`);
-});
-
-module.exports = server;
+};
